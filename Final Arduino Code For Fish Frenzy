@@ -1,0 +1,112 @@
+
+#include <LiquidCrystal_I2C.h>
+#include<UltraDistSensor.h>
+#include <Stepper.h>
+
+const int stepsPerRevolution = 600;  // Number Of Steps Per Revolution
+
+// initialize the stepper library on pins 6 and 7:
+Stepper myStepper(stepsPerRevolution, 6,7);
+
+LiquidCrystal_I2C lcd(0x27,20,4);
+UltraDistSensor mysensor;
+
+
+// defines pins numbers
+const int trigPin = 12;
+const int echoPin = 13;
+const int buzzer = 2;
+int redPin= 3;
+int greenPin = 4;
+int bluePin = 5;
+
+// defines variables
+long duration;
+int distance;
+int safetyDistance;
+float reading;
+int now = millis();
+
+void setup() {
+pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+pinMode(buzzer, OUTPUT);
+
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);  
+  
+    lcd.init();                      // initialize the lcd 
+    lcd.backlight();
+    Serial.begin(9600);
+     mysensor.attach(12,13);//Trigger pin , Echo pin
+     
+     // set the speed at 60 rpm:
+  myStepper.setSpeed(60);
+  // initialize the serial port:
+}
+
+
+void loop() {
+      reading=mysensor.distanceInCm();
+     lcd.setCursor(0,0);
+     lcd.print("Distance : ");
+      lcd.print(reading);
+      
+// Clears the trigPin
+digitalWrite(trigPin, LOW);
+ (1000);
+
+// Sets the trigPin on HIGH state for 1 second
+digitalWrite(trigPin, HIGH);
+ (1000);
+digitalWrite(trigPin, LOW);
+
+// Reads the echoPin, returns the sound wave travel time in seconds
+duration = pulseIn(echoPin, HIGH);
+
+// Calculating the distance
+distance= duration*0.034/2;
+
+safetyDistance = distance;
+if (safetyDistance > 7.5 && safetyDistance < 35){
+  digitalWrite(redPin,HIGH);
+  lcd.setCursor(0,2);
+  lcd.print ("REFILL, I'M HUNGRY ");
+}
+else{
+  digitalWrite(redPin,LOW);
+  lcd.setCursor(0,2);
+  lcd.print ("");
+}
+if (safetyDistance > 4 && safetyDistance < 7.49){
+  digitalWrite(bluePin, HIGH);
+  lcd.setCursor(0,2);
+  lcd.print ("I'M GETTING HUNGRY ");
+}
+else{
+  digitalWrite(bluePin,LOW);
+  lcd.setCursor(0,2);
+  lcd.print ("");
+}
+if (safetyDistance > 0 && safetyDistance < 3.99){
+  digitalWrite(greenPin, HIGH);
+  lcd.setCursor(0,2);
+  lcd.print ("I'M FULL           ");
+}
+else{
+  digitalWrite(greenPin,LOW);
+  lcd.setCursor(0,2);
+  lcd.print ("");
+}
+if (safetyDistance > 9 && safetyDistance < 35){
+  digitalWrite(buzzer, HIGH);
+}
+else{
+  digitalWrite(buzzer,LOW);
+}
+  // step one revolution  in one direction:
+  Serial.println("counterclockwise");
+  myStepper.step(-stepsPerRevolution);
+  delay(5000);
+}
